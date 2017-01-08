@@ -1,26 +1,41 @@
+#!/usr/bin/env python
+
+import argparse
 import sys
 import time
 import picamera
 
-FPS_OUTPUT = 60.
-OUT_SPEED = 2.
-VID_LENGTH = 1.
+def main():
+    parser = argparse.ArgumentParser(
+             prog='tl-capture',
+             description='Captures a sequence of images for creating timelapse photos')
 
-CAPTURE_INTERVAL = 1 / (FPS_OUTPUT / OUT_SPEED)
-NUMBER_OF_FRAMES = (int) (FPS_OUTPUT * VID_LENGTH)
-print NUMBER_OF_FRAMES
+    parser.add_argument('-i, --interval', type=int, dest='interval', metavar='I', 
+                        required=True, help='Time in seconds between captures.')
+    parser.add_argument('-f, --frames', type=int, dest='frames', metavar='F',
+                        required=True, help='Number of frames to capture')
+    parser.add_argument('-o, --output-dir', type=str, dest='output_dir', metavar='dir',
+                        default='.', help='The directory in which to save the images')
 
-camera = picamera.PiCamera()
-camera.hflip = True     
-camera.vflip = True
+    ns = parser.parse_args()
+    capture_frames(ns.frames, ns.interval, ns.output_dir)
 
-def capture_frame(camera, frame):
-    #camera.start_preview()
-    file_name = 'frame_%04d.jpg' % (frame)
-    camera.capture(file_name, use_video_port=True)
-    print 'captured frame %d' % (frame)
 
-for frame in range(NUMBER_OF_FRAMES):
-    capture_frame(camera, frame)
-    # print CAPTURE_INTERVAL
-    time.sleep(CAPTURE_INTERVAL)
+def capture_frames(frames, interval, output_dir):
+    camera = picamera.PiCamera()
+    camera.hflip = True     
+    camera.vflip = True
+
+    for frame in range(frames):
+        __capture_frame(camera, frame, output_dir)
+        time.sleep(interval)
+
+
+def __capture_frame(camera, frame, output_dir):
+    camera.start_preview()
+    file_name = '%s/frame_%04d.jpg' % (output_dir, frame)
+    camera.capture(file_name)
+    print 'wrote frame %d to %s' % (frame, file_name)
+
+if __name__ == "__main__":
+    main()
